@@ -1,4 +1,4 @@
-module [updateScoreLogic]
+module [scoreTddStep]
 
 import cli.Utc
 
@@ -9,31 +9,38 @@ ScoreUpdate : [
     EndOfGame,
 ]
 
-TddCycleRun : {
+TddStep : {
     result : [Red, Green],
     controlResult : {
         passingTestsCount : U8,
         totalTestCount : U8,
     },
-    triggeredAt : Utc.Utc,
+    performedAt : Utc.Utc,
 }
 
-updateScoreLogic : TddCycleRun, TddCycleRun -> ScoreUpdate
-updateScoreLogic = \previousRun, currentRun ->
-    when (previousRun.result, currentRun.result) is
-        (Green, Green) ->
-            if currentRun.controlResult.passingTestsCount != previousRun.controlResult.passingTestsCount then
-                DecreaseScore 20 # behavior changed during refacto
-            else
-                DoNothing
+scoreTddStep : TddStep, TddStep -> ScoreUpdate
+scoreTddStep = \previousStep, currentStep ->
+    behaviorChanged = currentStep.controlResult.passingTestsCount != previousStep.controlResult.passingTestsCount
+    madeProgresses = currentStep.controlResult.passingTestsCount > previousStep.controlResult.passingTestsCount
+    allControlTestsArePassing = currentStep.controlResult.passingTestsCount == currentStep.controlResult.totalTestCount
 
-        (Green, Red) -> DoNothing
-        (Red, Red) -> DecreaseScore 10 # failed twice
-        (Red, Green) ->
-            if currentRun.controlResult.passingTestsCount > previousRun.controlResult.passingTestsCount then
-                if currentRun.controlResult.passingTestsCount == currentRun.controlResult.totalTestCount then
-                    EndOfGame
-                else
-                    IncreaseScore 20 # todo use timer to calculate a bonus if < 30''
+    when (previousStep.result, currentStep.result) is
+        (Green, Green) ->
+            if behaviorChanged then
+                DecreaseScore 20 # behavior must not change in refacto
             else
-                DecreaseScore 10 # no progression in logic (or even regression)
+                DoNothing # refactoring
+
+        (Green, Red) ->
+            DoNothing # starting a new TDD cycle
+
+        (Red, Red) ->
+            DecreaseScore 10 # failed twice in a row
+
+        (Red, Green) ->
+            if allControlTestsArePassing then
+                EndOfGame
+            else if madeProgresses then
+                IncreaseScore 20 # todo use timer to calculate a bonus if < 30''
+            else
+                DecreaseScore 10 # no progresses made (or even regression) with a new test

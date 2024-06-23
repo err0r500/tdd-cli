@@ -1,28 +1,73 @@
 module []
 
-import Score exposing [scoreTddStep]
+import Score exposing [scoreTddStep, scoreSession]
 import cli.Utc
 
-defaultControlResult = { passingTestsCount: 20, totalTestCount: 103 }
-defaultControlResult2 = { passingTestsCount: 53, totalTestCount: 103 }
-green = { result: Green, controlResult: defaultControlResult, performedAt: 123 |> Utc.fromMillisSinceEpoch }
-green2 = { result: Green, controlResult: defaultControlResult2, performedAt: 123 |> Utc.fromMillisSinceEpoch }
-red = { result: Red, controlResult: defaultControlResult, performedAt: 123 |> Utc.fromMillisSinceEpoch }
+controlResultNoPassing = { passingTestsCount: 0, totalTestCount: 103 }
+controlResultMostPassing = { controlResultNoPassing & passingTestsCount: 83 }
+controlResultAllPassing = { controlResultNoPassing & passingTestsCount: 103 }
 
+greenBeginning = { result: Green, controlResult: controlResultNoPassing, performedAt: 123 |> Utc.fromMillisSinceEpoch }
+greenMidSession = { greenBeginning & controlResult: controlResultMostPassing }
+greenFinished = { greenBeginning & controlResult: controlResultAllPassing }
+
+red = { result: Red, controlResult: controlResultNoPassing, performedAt: 123 |> Utc.fromMillisSinceEpoch }
+
+# scoreTddStep
 expect
     scoreTddStep
-        green
+        greenBeginning
         red
     == DoNothing
 
 expect
     scoreTddStep
-        green
-        green
+        greenBeginning
+        greenBeginning
     == DoNothing
 
 expect
     scoreTddStep
-        green
-        green2
+        greenBeginning
+        greenMidSession
     == DecreaseScore 20
+
+## scoreSession
+expect
+    scoreSession
+        []
+    == (0, Ongoing)
+
+expect
+    scoreSession
+        [greenBeginning]
+    == (0, Ongoing)
+
+expect
+    scoreSession
+        [red, greenMidSession]
+    == (20, Ongoing)
+
+expect
+    scoreSession
+        [red, greenBeginning] # no progress made
+    == (-10, Ongoing)
+
+expect
+    scoreSession [
+        red,
+        greenMidSession, # +20
+        greenBeginning, # -20 (behavior change on refacto)
+    ]
+    == (0, Ongoing)
+
+expect
+    scoreSession [
+        red,
+        greenMidSession, # + 20
+        red,
+        greenFinished, # +20, end
+        red,
+        red,
+    ]
+    == (40, Finished) # no update once finished

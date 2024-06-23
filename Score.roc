@@ -1,4 +1,4 @@
-module [scoreTddStep]
+module [scoreTddStep, scoreSession]
 
 import cli.Utc
 
@@ -6,7 +6,7 @@ ScoreUpdate : [
     DoNothing,
     DecreaseScore U8,
     IncreaseScore U8,
-    EndOfGame,
+    EndOfGame U8,
 ]
 
 TddStep : {
@@ -38,9 +38,25 @@ scoreTddStep = \previousStep, currentStep ->
             DecreaseScore 10 # failed twice in a row
 
         (Red, Green) ->
+            onSuccessIncrease = 20 # todo add a bonus if < 30''
             if allControlTestsArePassing then
-                EndOfGame
+                EndOfGame onSuccessIncrease
             else if madeProgresses then
-                IncreaseScore 20 # todo use timer to calculate a bonus if < 30''
+                IncreaseScore onSuccessIncrease
             else
                 DecreaseScore 10 # no progresses made (or even regression) with a new test
+
+scoreSession : List TddStep -> (I16, [Ongoing, Finished])
+scoreSession = \session ->
+    List.map2 session (List.dropFirst session 1) scoreTddStep
+    |> List.walk
+        (0, Ongoing)
+        \(currScore, currState), updateInstruction ->
+            if currState == Finished then
+                (currScore, currState)
+            else
+                when updateInstruction is
+                    DoNothing -> (currScore, Ongoing)
+                    EndOfGame x -> (currScore + (Num.toI16 x), Finished)
+                    DecreaseScore x -> (currScore - (Num.toI16 x), Ongoing)
+                    IncreaseScore x -> (currScore + (Num.toI16 x), Ongoing)

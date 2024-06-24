@@ -1,4 +1,4 @@
-module [scoreTddStep, scoreSession]
+module [scoreTddStep, scoreSession, TddStep]
 
 import cli.Utc
 

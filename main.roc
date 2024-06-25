@@ -7,16 +7,24 @@ import cli.Stdout
 import cli.Task
 import Score exposing [scoreSession]
 import Storage exposing [loadSessionFromFile, decodeSessionFile]
+import Cli exposing [readCliArg]
 
 main =
-    session =
+    when readCliArg! is
+        RunTests -> runTests
+        ShowScore -> showScore
+        UnknownArg e -> Task.err (StdoutErr (Other e))
+        _ -> Task.err (StdoutErr (Other "failed parsing cli arg"))
+
+runTests =
+    Stdout.line! "running tests ..."
+
+showScore =
+    result =
         loadSessionFromFile!
             |> decodeSessionFile
+            |> Result.map scoreSession
 
-    calculateScore =
-        session
-        |> Result.map scoreSession
-
-    when calculateScore is
-        Ok (score, _) -> Stdout.line! "score : $(Num.toStr score)"
+    when result is
+        Ok (score, ongoing) -> Stdout.line! "score : $(Num.toStr score), $(if ongoing == Ongoing then "session still ongoing" else "session finished, delete session file to start again")"
         Err e -> Stdout.line! "woops $(Inspect.toStr e)"

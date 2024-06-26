@@ -8,6 +8,7 @@ import cli.Task
 import Score exposing [scoreSession]
 import Storage exposing [loadSessionFromFile, decodeSessionFile]
 import Cli exposing [readCliArg]
+import cli.Cmd
 
 main =
     when readCliArg! is
@@ -16,8 +17,25 @@ main =
         UnknownArg e -> Task.err (StdoutErr (Other e))
         _ -> Task.err (StdoutErr (Other "failed parsing cli arg"))
 
+# for now, must be run from the ./_examples/typescript folder
 runTests =
-    Stdout.line! "running tests ..."
+    testCommand = "npm run test"
+
+    when Str.split testCommand " " is
+        [head, .. as tail] ->
+            Cmd.new head
+            |> Cmd.args tail
+            |> Cmd.status
+            |> Task.attempt \result ->
+                when result is
+                    Ok _ -> Stdout.line "tests are GREEN"
+                    Err (CmdError err) ->
+                        when err is
+                            ExitCode _ -> Stdout.line "tests are RED"
+                            KilledBySignal -> Stdout.line "Child was killed by signal"
+                            IOError str -> Stdout.line "IOError executing: $(str)"
+
+        _ -> Stdout.line "couldn't parse the test command : $(testCommand)"
 
 showScore =
     result =

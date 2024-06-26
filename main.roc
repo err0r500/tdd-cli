@@ -6,9 +6,10 @@ app [main] {
 import cli.Stdout
 import cli.Task
 import Score exposing [scoreSession]
-import Storage exposing [loadSessionFromFile, decodeSessionFile]
+import SessionStorage exposing [loadSessionFromFile, decodeSessionFile]
 import Cli exposing [readCliArg]
 import cli.Cmd
+import Config
 
 main =
     when readCliArg! is
@@ -19,12 +20,12 @@ main =
 
 # for now, must be run from the ./_examples/typescript folder
 runTests =
-    testCommand = "npm run test"
+    { testCommand } = Config.loadConfigFromFile!
 
     when Str.split testCommand " " is
-        [head, .. as tail] ->
-            Cmd.new head
-            |> Cmd.args tail
+        [cmd, .. as args] ->
+            Cmd.new cmd
+            |> Cmd.args args
             |> Cmd.status
             |> Task.attempt \result ->
                 when result is

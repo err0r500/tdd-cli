@@ -1,0 +1,4 @@
+{
+  "testCommand": "npm run test",
+  "controlCommand": "todo"
+}

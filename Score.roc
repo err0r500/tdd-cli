@@ -23,30 +23,34 @@ TddStep : {
 scoreTddStep : TddStep, TddStep -> ScoreUpdate
 scoreTddStep = \previousStep, currentStep ->
     behaviorChanged = currentStep.controlResult.passingTestsCount != previousStep.controlResult.passingTestsCount
-    madeProgresses = currentStep.controlResult.passingTestsCount > previousStep.controlResult.passingTestsCount
     allControlTestsArePassing = currentStep.controlResult.passingTestsCount == currentStep.controlResult.totalTestsCount
 
     when (previousStep.result, currentStep.result) is
         (Green, Green) ->
             if behaviorChanged then
-                DecreaseScore 20 # behavior must not change in refacto
+                # behavior must not change during refactoring
+                DecreaseScore 20
             else
-                DoNothing # refactoring
+                DoNothing
 
         (Green, Red) ->
-            DoNothing # starting a new TDD cycle
+            # starting a new TDD cycle
+            DoNothing
 
         (Red, Red) ->
-            DecreaseScore 10 # failed twice in a row
+            # failed twice in a row
+            DecreaseScore 10
 
         (Red, Green) ->
             onSuccessIncrease = 20 # todo add a bonus if < 30''
             if allControlTestsArePassing then
                 EndOfGame onSuccessIncrease
-            else if madeProgresses then
+            else if behaviorChanged then
+                # we don't care if more tests are passing, just that things keep moving
                 IncreaseScore onSuccessIncrease
             else
-                DecreaseScore 10 # no progresses made (or even regression) with a new test
+                # no progress made with a new test
+                DecreaseScore 10
 
 scoreSession : List TddStep -> (I16, [Ongoing, Finished])
 scoreSession = \session ->

@@ -1,4 +1,4 @@
-module [loadSessionFromFile, decodeSessionFile]
+module [loadSessionFromFile, decodeSessionFile, sessionToJsonStr, storeResultsInSession]
 
 import cli.Task
 import cli.Path
@@ -6,6 +6,7 @@ import cli.Utc
 import cli.File
 import Score exposing [TddStep]
 import Helpers exposing [jsonStrDecode]
+import json.Json
 
 TddStepDTO : {
     passed : Bool,
@@ -22,6 +23,19 @@ tddStepFromJSON = \tddStepDTO -> {
     controlResult: tddStepDTO.controlResult,
     performedAt: Utc.fromNanosSinceEpoch tddStepDTO.performedAt,
 }
+
+tddStepToDTO : TddStep -> TddStepDTO
+tddStepToDTO = \tddStep -> {
+    passed: tddStep.result == Green,
+    controlResult: tddStep.controlResult,
+    performedAt: Utc.toNanosSinceEpoch tddStep.performedAt,
+}
+
+sessionToJsonStr : List TddStep -> List U8
+sessionToJsonStr = \session ->
+    session
+    |> List.map tddStepToDTO
+    |> Encode.toBytes Json.utf8
 
 defaultSession = "[]"
 
@@ -42,3 +56,24 @@ decodeSessionFile = \sessionFileContent ->
     |> .result
     |> Result.mapErr FailedToDecodeSessionJson
     |> Result.map (\tddStepDtos -> List.map tddStepDtos tddStepFromJSON)
+
+storeResultsInSession = \userTestsResult, controlResult ->
+    now = Utc.now!
+    currentSession =
+        loadSessionFromFile!
+            |> Result.map
+                (\storedSession ->
+                    List.append storedSession {
+                        result: userTestsResult,
+                        controlResult: controlResult,
+                        performedAt: now,
+                    }
+                )
+
+    when currentSession is
+        Ok s ->
+            File.writeBytes!
+                (Path.fromStr "./session.json")
+                (s |> sessionToJsonStr)
+
+        Err _ -> Task.err Book

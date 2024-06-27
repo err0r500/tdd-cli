@@ -6,9 +6,9 @@ app [main] {
 import cli.Stdout
 import cli.Task
 import Score exposing [scoreSession]
-import SessionStorage exposing [loadSessionFromFile]
+import SessionStorage exposing [loadSessionFromFile, storeResultsInSession]
 import Cli exposing [readCliArg]
-import Commands exposing [runUserTests, runControlTests, controlResultToStr]
+import Commands exposing [runUserTests, runControlTests]
 import Config
 import cli.Arg
 
@@ -23,9 +23,9 @@ main =
 # for now, must be run from the ./_examples/typescript folder
 runTests =
     { testCommand, controlCommand } = Config.loadConfigFromFile!
-    _ = runUserTests! testCommand
+    userTestsResult = runUserTests! testCommand
     controlResult = runControlTests! controlCommand
-    Stdout.line! (controlResultToStr controlResult)
+    storeResultsInSession userTestsResult controlResult
 
 showScore =
     result =

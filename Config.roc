@@ -2,8 +2,8 @@ module [loadConfigFromFile]
 
 import cli.Task
 import cli.Path
-import json.Json
 import cli.File
+import Helpers exposing [jsonStrDecode]
 
 Config : {
     testCommand : Str,
@@ -14,8 +14,7 @@ loadConfigFromFile : Task.Task Config [ConfDecodeError DecodeError, FileReadErro
 loadConfigFromFile =
     decodeJson = \req ->
         req
-        |> Str.toUtf8
-        |> Decode.fromBytesPartial Json.utf8
+        |> jsonStrDecode
         |> .result
         |> Task.fromResult
 

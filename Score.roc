@@ -1,4 +1,4 @@
-module [scoreTddStep, scoreSession, TddStep]
+module [scoreTddStep, scoreSession, TddStep, ControlResult]
 
 import cli.Utc
 
@@ -9,12 +9,14 @@ ScoreUpdate : [
     EndOfGame U8,
 ]
 
+ControlResult : {
+    passingTestsCount : U8,
+    totalTestsCount : U8,
+}
+
 TddStep : {
     result : [Red, Green],
-    controlResult : {
-        passingTestsCount : U8,
-        totalTestCount : U8,
-    },
+    controlResult : ControlResult,
     performedAt : Utc.Utc,
 }
 
@@ -22,7 +24,7 @@ scoreTddStep : TddStep, TddStep -> ScoreUpdate
 scoreTddStep = \previousStep, currentStep ->
     behaviorChanged = currentStep.controlResult.passingTestsCount != previousStep.controlResult.passingTestsCount
     madeProgresses = currentStep.controlResult.passingTestsCount > previousStep.controlResult.passingTestsCount
-    allControlTestsArePassing = currentStep.controlResult.passingTestsCount == currentStep.controlResult.totalTestCount
+    allControlTestsArePassing = currentStep.controlResult.passingTestsCount == currentStep.controlResult.totalTestsCount
 
     when (previousStep.result, currentStep.result) is
         (Green, Green) ->

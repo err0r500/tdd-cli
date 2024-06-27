@@ -1,11 +1,8 @@
 module [readCliArg]
 
-import cli.Arg
 import cli.Task
 
-readCliArg =
-    args = Arg.list!
-
+readCliArg = \args ->
     parsed =
         if List.len args <= 1 then
             Ok RunTests

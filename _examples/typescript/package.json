@@ -7,6 +7,7 @@
     "typescript": "^5.5.2"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest ./src",
+    "control": "jest ./control.test.ts --silent --json | jq -c '{passingTestsCount: .numPassedTests, totalTestsCount: .numTotalTests}'"
   }
 }

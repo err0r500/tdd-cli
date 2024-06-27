@@ -6,13 +6,15 @@ app [main] {
 import cli.Stdout
 import cli.Task
 import Score exposing [scoreSession]
-import SessionStorage exposing [loadSessionFromFile, decodeSessionFile]
+import SessionStorage exposing [loadSessionFromFile]
 import Cli exposing [readCliArg]
-import cli.Cmd
+import Commands exposing [runUserTests, runControlTests, controlResultToStr]
 import Config
+import cli.Arg
 
 main =
-    when readCliArg! is
+    cmd = readCliArg! Arg.list!
+    when cmd is
         RunTests -> runTests
         ShowScore -> showScore
         UnknownArg e -> Task.err (StdoutErr (Other e))
@@ -20,28 +22,14 @@ main =
 
 # for now, must be run from the ./_examples/typescript folder
 runTests =
-    { testCommand } = Config.loadConfigFromFile!
-
-    when Str.split testCommand " " is
-        [cmd, .. as args] ->
-            Cmd.new cmd
-            |> Cmd.args args
-            |> Cmd.status
-            |> Task.attempt \result ->
-                when result is
-                    Ok _ -> Stdout.line "tests are GREEN"
-                    Err (CmdError err) ->
-                        when err is
-                            ExitCode _ -> Stdout.line "tests are RED"
-                            KilledBySignal -> Stdout.line "Child was killed by signal"
-                            IOError str -> Stdout.line "IOError executing: $(str)"
-
-        _ -> Stdout.line "couldn't parse the test command : $(testCommand)"
+    { testCommand, controlCommand } = Config.loadConfigFromFile!
+    _ = runUserTests! testCommand
+    controlResult = runControlTests! controlCommand
+    Stdout.line! (controlResultToStr controlResult)
 
 showScore =
     result =
         loadSessionFromFile!
-            |> decodeSessionFile
             |> Result.map scoreSession
 
     when result is

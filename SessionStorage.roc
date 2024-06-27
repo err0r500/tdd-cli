@@ -3,15 +3,15 @@ module [loadSessionFromFile, decodeSessionFile]
 import cli.Task
 import cli.Path
 import cli.Utc
-import json.Json
 import cli.File
 import Score exposing [TddStep]
+import Helpers exposing [jsonStrDecode]
 
 TddStepDTO : {
     passed : Bool,
     controlResult : {
         passingTestsCount : U8,
-        totalTestCount : U8,
+        totalTestsCount : U8,
     },
     performedAt : I128,
 }
@@ -23,20 +23,22 @@ tddStepFromJSON = \tddStepDTO -> {
     performedAt: Utc.fromNanosSinceEpoch tddStepDTO.performedAt,
 }
 
+defaultSession = "[]"
+
+loadSessionFromFile : Task.Task (Result (List TddStep) _) _
 loadSessionFromFile =
-    handleReadWithDefault = \ct ->
-        when ct is
-            Err (FileReadErr _ NotFound) -> Task.ok "[]"
+    provideDefaultSessionOnNotFound = \readResult ->
+        when readResult is
+            Err (FileReadErr _ NotFound) -> Task.ok defaultSession
             otherwise -> Task.fromResult otherwise
 
     File.readUtf8 (Path.fromStr "./session.json")
-    |> Task.attempt handleReadWithDefault
+    |> Task.attempt provideDefaultSessionOnNotFound
+    |> Task.map decodeSessionFile
 
-decodeSessionFile = \sessionFile ->
-    decode : Str -> Decode.DecodeResult (List TddStepDTO)
-    decode = \req -> Decode.fromBytesPartial (req |> Str.toUtf8) Json.utf8
-
-    decode sessionFile
+decodeSessionFile = \sessionFileContent ->
+    sessionFileContent
+    |> jsonStrDecode
     |> .result
-    |> Result.mapErr (\e -> "err when decoding the session from JSON : $(Inspect.toStr e)")
+    |> Result.mapErr FailedToDecodeSessionJson
     |> Result.map (\tddStepDtos -> List.map tddStepDtos tddStepFromJSON)

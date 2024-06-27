@@ -20,7 +20,6 @@ main =
         UnknownArg e -> Task.err (StdoutErr (Other e))
         _ -> Task.err (StdoutErr (Other "failed parsing cli arg"))
 
-# for now, must be run from the ./_examples/typescript folder
 runTests =
     { testCommand, controlCommand } = Config.loadConfigFromFile!
     userTestsResult = runUserTests! testCommand
@@ -28,10 +27,12 @@ runTests =
     storeResultsInSession userTestsResult controlResult
 
 showScore =
+    formatResult = \score, ongoing ->
+        "score : $(Num.toStr score), $(if ongoing == Ongoing then "session still ongoing" else "session finished, delete session.json file to start again")"
     result =
         loadSessionFromFile!
             |> Result.map scoreSession
 
     when result is
-        Ok (score, ongoing) -> Stdout.line! "score : $(Num.toStr score), $(if ongoing == Ongoing then "session still ongoing" else "session finished, delete session file to start again")"
+        Ok (score, ongoing) -> formatResult score ongoing |> Stdout.line!
         Err e -> Stdout.line! "woops $(Inspect.toStr e)"

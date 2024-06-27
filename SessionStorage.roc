@@ -1,4 +1,4 @@
-module [loadSessionFromFile, decodeSessionFile, sessionToJsonStr, storeResultsInSession]
+module [loadSessionFromFile, decodeSessionFile, storeResultsInSession]
 
 import cli.Task
 import cli.Path
@@ -31,8 +31,8 @@ tddStepToDTO = \tddStep -> {
     performedAt: Utc.toNanosSinceEpoch tddStep.performedAt,
 }
 
-sessionToJsonStr : List TddStep -> List U8
-sessionToJsonStr = \session ->
+sessionToJson : List TddStep -> List U8
+sessionToJson = \session ->
     session
     |> List.map tddStepToDTO
     |> Encode.toBytes Json.utf8
@@ -74,6 +74,6 @@ storeResultsInSession = \userTestsResult, controlResult ->
         Ok s ->
             File.writeBytes!
                 (Path.fromStr "./session.json")
-                (s |> sessionToJsonStr)
+                (sessionToJson s)
 
         Err _ -> Task.err Book

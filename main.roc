@@ -29,6 +29,7 @@ runTests =
 showScore =
     formatResult = \score, ongoing ->
         "score : $(Num.toStr score), $(if ongoing == Ongoing then "session still ongoing" else "session finished, delete session.json file to start again")"
+
     result =
         loadSessionFromFile!
             |> Result.map scoreSession

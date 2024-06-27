@@ -1,16 +1,15 @@
 module [loadConfigFromFile]
 
 import cli.Task
-import cli.Path
 import cli.File
-import Helpers exposing [jsonStrDecode]
+import Helpers exposing [jsonStrDecode, configFilePath]
 
 Config : {
     testCommand : Str,
     controlCommand : Str,
 }
 
-loadConfigFromFile : Task.Task Config [ConfDecodeError DecodeError, FileReadError _]
+loadConfigFromFile : Task.Task Config _
 loadConfigFromFile =
     decodeJson = \req ->
         req
@@ -18,10 +17,14 @@ loadConfigFromFile =
         |> .result
         |> Task.fromResult
 
-    File.readUtf8 (Path.fromStr "./tdd.json")
+    File.readUtf8 configFilePath
     |> Task.attempt
         (\fileReading ->
             when fileReading is
-                Ok content -> content |> decodeJson |> Task.mapErr ConfDecodeError
+                Ok content ->
+                    content
+                    |> decodeJson
+                    |> Task.mapErr ConfigDecodeError
+
                 Err e -> Task.err (FileReadError e)
         )

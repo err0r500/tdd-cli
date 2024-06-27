@@ -1,11 +1,10 @@
 module [loadSessionFromFile, decodeSessionFile, storeResultsInSession]
 
 import cli.Task
-import cli.Path
 import cli.Utc
 import cli.File
 import Score exposing [TddStep]
-import Helpers exposing [jsonStrDecode]
+import Helpers exposing [jsonStrDecode, sessionFilePath]
 import json.Json
 
 TddStepDTO : {
@@ -46,7 +45,7 @@ loadSessionFromFile =
             Err (FileReadErr _ NotFound) -> Task.ok defaultSession
             otherwise -> Task.fromResult otherwise
 
-    File.readUtf8 (Path.fromStr "./session.json")
+    File.readUtf8 sessionFilePath
     |> Task.attempt provideDefaultSessionOnNotFound
     |> Task.map decodeSessionFile
 
@@ -59,21 +58,17 @@ decodeSessionFile = \sessionFileContent ->
 
 storeResultsInSession = \userTestsResult, controlResult ->
     now = Utc.now!
-    currentSession =
+    newStep = {
+        result: userTestsResult,
+        controlResult: controlResult,
+        performedAt: now,
+    }
+
+    newSession =
         loadSessionFromFile!
             |> Result.map
-                (\storedSession ->
-                    List.append storedSession {
-                        result: userTestsResult,
-                        controlResult: controlResult,
-                        performedAt: now,
-                    }
-                )
-
-    when currentSession is
-        Ok s ->
-            File.writeBytes!
-                (Path.fromStr "./session.json")
-                (sessionToJson s)
-
-        Err _ -> Task.err Book
+                \storedSession -> List.append storedSession newStep
+            |> Task.fromResult!
+    File.writeBytes!
+        sessionFilePath
+        (sessionToJson newSession)

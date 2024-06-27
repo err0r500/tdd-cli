@@ -66,4 +66,4 @@ jobs:
       - run: expect -v
 
       - name: run all test files
-        run: find . -name "*.test.roc" -exec roc test "{}" --linker=legacy \;
+        run: find . -name "*.test.roc" -exec ./roc_nightly/roc test "{}" --linker=legacy \;

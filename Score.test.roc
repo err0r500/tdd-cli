@@ -3,7 +3,7 @@ module []
 import Score exposing [scoreTddStep, scoreSession]
 import cli.Utc
 
-controlResultNoPassing = { passingTestsCount: 0, totalTestCount: 103 }
+controlResultNoPassing = { passingTestsCount: 0, totalTestsCount: 103 }
 controlResultMostPassing = { controlResultNoPassing & passingTestsCount: 83 }
 controlResultAllPassing = { controlResultNoPassing & passingTestsCount: 103 }
 

@@ -2,9 +2,9 @@ name: Bundle
 
 on:
   # Run when a release is published
-  release:
-    types:
-      - published
+  push:
+    branches:
+      - main
 
 jobs:
   bundle:
@@ -24,3 +24,4 @@ jobs:
         with:
           library: src/main.roc
           token: ${{ github.token }}
+          bundle-type: .tar.gz

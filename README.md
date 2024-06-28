@@ -42,5 +42,5 @@ you can have a look at the [typescript example](./_examples/typescript)
 ## dev notes
 ### run roc from example folder
 ```
-roc dev ../../main.roc
+roc dev ../../src/main.roc
 ```

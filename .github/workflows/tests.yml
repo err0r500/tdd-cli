@@ -21,4 +21,4 @@ jobs:
 
       - name: Test the library
         #run: find . -name "*.test.roc" -exec roc test "{}" --linker=legacy \;
-        run: roc test ./Score.test.roc --linker=legacy
+        run: roc test ./src/Score.test.roc --linker=legacy
